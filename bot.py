@@ -2,7 +2,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart,Command
 from aiogram import F
-from aiogram.types import Message,InlineKeyboardButton
+from aiogram.types import Message,InlineKeyboardButton,InlineQuery,InlineQueryResultPhoto
 from data import config
 import asyncio
 import logging
@@ -16,12 +16,29 @@ from aiogram.fsm.context import FSMContext #new
 from states.reklama import Adverts
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 import time 
-
+from search_image import search_image_function
 ADMINS = config.ADMINS
 TOKEN = config.BOT_TOKEN
 CHANNELS = config.CHANNELS
 
 dp = Dispatcher()
+
+
+@dp.inline_query()
+async def bmw_inline(inline_query:InlineQuery):
+    rasm_nomi = inline_query.query
+    if rasm_nomi:
+        results = [
+            InlineQueryResultPhoto(
+                        id=f"{index}",
+                        photo_url=i,
+                        thumbnail_url=i
+                        )
+                        for index,i in enumerate(search_image_function(rasm_nomi))
+                ]
+        
+
+        await inline_query.answer(results=results)
 
 
 
