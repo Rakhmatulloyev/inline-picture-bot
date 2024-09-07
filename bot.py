@@ -13,10 +13,15 @@ from filters.admin import IsBotAdminFilter
 from filters.check_sub_channel import IsCheckSubChannels
 from keyboard_buttons import admin_keyboard
 from aiogram.fsm.context import FSMContext #new
-from states.reklama import Adverts
+from reklama import Adverts
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 import time 
 from search_image import search_image_function
+
+import logging
+from aiogram.types import CallbackQuery, ContentType
+from filters.admin import IsBotAdminFilter,AdminStates
+
 ADMINS = config.ADMINS
 TOKEN = config.BOT_TOKEN
 CHANNELS = config.CHANNELS
@@ -138,6 +143,48 @@ def setup_middlewares(dispatcher: Dispatcher, bot: Bot) -> None:
     from middlewares.throttling import ThrottlingMiddleware
 
     # Spamdan himoya qilish uchun klassik ichki o'rta dastur. So'rovlar orasidagi asosiy vaqtlar 0,5 soniya
+    dispatcher.message.middleware(ThrottlingMiddleware(slow_mode_delay=0.5))
+
+from help_stt import Help
+
+
+# Xabar yuborish komandasi
+@dp.message(Command("xabar"))
+async def help_commands(message: Message, state: FSMContext):
+    await message.answer("Xabaringizni yozib ✍🏻 \nMurojatingiz 👤 adminga boradi !")
+    await state.set_state(Help.help)
+    
+
+# Foydalanuvchining adminga yozgan xabarini jo'natish
+@dp.message(Help.help)
+async def send_advert(message: Message, state: FSMContext):
+    try:
+        # await bot.send_message(ADMINS[0],"📌 Yangi xabar")
+        msg = f"{message.from_user.id} 📌 \n\nYangi xabar\n\n"
+        msg += f"{message.text}"
+        await bot.send_message(ADMINS[0], msg,parse_mode="html")
+        await message.answer("Xabaringiz adminga yetkazildi")
+        await state.clear()
+        
+    except:
+        
+        await message.answer("Faqat matn ko'rinishidagi xabarlarni yubora olasiz.")
+        await message.answer("Marhamat adminga xabaringizni qoldiring.")
+
+
+@dp.message(F.reply_to_message, IsBotAdminFilter(ADMINS))
+async def is_admin(message: Message):
+    try:    
+            u_id = message.reply_to_message.text.split()[0]
+            print(u_id, "*************")
+            text = message.text
+            await bot.send_message(int(u_id), text)
+            await message.answer("xabaringiz yetkazildi. ")
+    except:
+        await message.answer("Nimadir xato bo'ldi")
+
+def setup_middlewares(dispatcher: Dispatcher, bot: Bot) -> None:
+    from middlewares.throttling import ThrottlingMiddleware
     dispatcher.message.middleware(ThrottlingMiddleware(slow_mode_delay=0.5))
 
 
